@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.knowledge.mapper.KbArticleMapper">
+
+    <!-- 获取搜索建议 -->
+    <select id="getSearchSuggestions" resultType="java.lang.String">
+        SELECT DISTINCT title
+        FROM kb_article
+        WHERE del_flag = 0 
+        AND status = 'published'
+        AND title LIKE CONCAT(#{keyword}, '%')
+        UNION
+        SELECT DISTINCT keywords
+        FROM kb_article
+        WHERE del_flag = 0 
+        AND status = 'published'
+        AND keywords LIKE CONCAT(#{keyword}, '%')
+        AND keywords IS NOT NULL
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取热门搜索关键词 -->
+    <select id="getHotSearchKeywords" resultType="java.util.Map">
+        SELECT 
+            keyword,
+            COUNT(*) as search_count,
+            MAX(search_time) as last_search_time
+        FROM kb_search_history
+        WHERE search_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY keyword
+        ORDER BY search_count DESC, last_search_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取相关知识推荐 -->
+    <select id="getRelatedArticles" resultMap="org.jeecg.modules.knowledge.mapper.KbArticleMapper.KbArticleVOMap">
+        SELECT 
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        WHERE a.del_flag = 0 
+        AND a.status = 'published'
+        AND a.id != #{articleId}
+        AND (
+            a.category_id = (SELECT category_id FROM kb_article WHERE id = #{articleId})
+            OR EXISTS (
+                SELECT 1 FROM kb_article_tag at1
+                INNER JOIN kb_article_tag at2 ON at1.tag_id = at2.tag_id
+                WHERE at1.article_id = #{articleId} AND at2.article_id = a.id
+            )
+        )
+        ORDER BY a.quality_score DESC, a.view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 高级搜索 -->
+    <select id="advancedSearchArticles" resultMap="org.jeecg.modules.knowledge.mapper.KbArticleMapper.KbArticleVOMap">
+        SELECT 
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        WHERE a.del_flag = 0
+        <if test="title != null and title != ''">
+            AND a.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="content != null and content != ''">
+            AND a.content LIKE CONCAT('%', #{content}, '%')
+        </if>
+        <if test="keywords != null and keywords != ''">
+            AND a.keywords LIKE CONCAT('%', #{keywords}, '%')
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND a.category_id = #{categoryId}
+        </if>
+        <if test="createBy != null and createBy != ''">
+            AND a.create_by = #{createBy}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND a.create_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND a.create_time &lt;= #{endTime}
+        </if>
+        <if test="status != null and status != ''">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 记录搜索历史 -->
+    <insert id="insertSearchHistory">
+        INSERT INTO kb_search_history (id, keyword, user_id, result_count, search_time)
+        VALUES (REPLACE(UUID(), '-', ''), #{keyword}, #{userId}, #{resultCount}, NOW())
+        ON DUPLICATE KEY UPDATE
+        result_count = #{resultCount},
+        search_time = NOW()
+    </insert>
+
+    <!-- 获取用户搜索历史 -->
+    <select id="getUserSearchHistory" resultType="java.util.Map">
+        SELECT 
+            keyword,
+            result_count,
+            search_time
+        FROM kb_search_history
+        WHERE user_id = #{userId}
+        ORDER BY search_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 清除用户搜索历史 -->
+    <delete id="clearUserSearchHistory">
+        DELETE FROM kb_search_history
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 搜索统计分析 -->
+    <select id="getSearchStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(DISTINCT keyword) as total_keywords,
+            COUNT(*) as total_searches,
+            COUNT(DISTINCT user_id) as total_users,
+            AVG(result_count) as avg_result_count,
+            (SELECT keyword FROM kb_search_history 
+             WHERE search_time BETWEEN #{startTime} AND #{endTime}
+             GROUP BY keyword 
+             ORDER BY COUNT(*) DESC 
+             LIMIT 1) as top_keyword
+        FROM kb_search_history
+        WHERE search_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

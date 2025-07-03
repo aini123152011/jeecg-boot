@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.knowledge.mapper.KbArticleMapper">
+
+    <!-- 知识条目VO结果映射 -->
+    <resultMap id="KbArticleVOMap" type="org.jeecg.modules.knowledge.vo.KbArticleVO">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="summary" property="summary"/>
+        <result column="content" property="content"/>
+        <result column="content_type" property="contentType"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="category_name" property="categoryName"/>
+        <result column="keywords" property="keywords"/>
+        <result column="source_type" property="sourceType"/>
+        <result column="source_url" property="sourceUrl"/>
+        <result column="attachment_ids" property="attachmentIds"/>
+        <result column="view_count" property="viewCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="collect_count" property="collectCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="share_count" property="shareCount"/>
+        <result column="quality_score" property="qualityScore"/>
+        <result column="status" property="status"/>
+        <result column="publish_time" property="publishTime"/>
+        <result column="is_top" property="isTop"/>
+        <result column="is_recommend" property="isRecommend"/>
+        <result column="is_public" property="isPublic"/>
+        <result column="version" property="version"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_by_name" property="createByName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_by_name" property="updateByName"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 分页查询知识条目（包含分类名称） -->
+    <select id="selectArticlePageWithCategory" resultMap="KbArticleVOMap">
+        SELECT 
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        WHERE a.del_flag = 0
+        <if test="categoryId != null and categoryId != ''">
+            AND a.category_id = #{categoryId}
+        </if>
+        <if test="title != null and title != ''">
+            AND a.title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="status != null and status != ''">
+            AND a.status = #{status}
+        </if>
+        ORDER BY a.is_top DESC, a.publish_time DESC, a.create_time DESC
+    </select>
+
+    <!-- 全文搜索知识条目 -->
+    <select id="searchArticles" resultMap="KbArticleVOMap">
+        SELECT 
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        WHERE a.del_flag = 0 AND a.status = 'published'
+        <if test="keyword != null and keyword != ''">
+            AND (
+                a.title LIKE CONCAT('%', #{keyword}, '%')
+                OR a.summary LIKE CONCAT('%', #{keyword}, '%')
+                OR a.content LIKE CONCAT('%', #{keyword}, '%')
+                OR a.keywords LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND a.category_id = #{categoryId}
+        </if>
+        ORDER BY 
+            CASE 
+                WHEN a.title LIKE CONCAT('%', #{keyword}, '%') THEN 1
+                WHEN a.summary LIKE CONCAT('%', #{keyword}, '%') THEN 2
+                WHEN a.keywords LIKE CONCAT('%', #{keyword}, '%') THEN 3
+                ELSE 4
+            END,
+            a.quality_score DESC,
+            a.view_count DESC
+    </select>
+
+    <!-- 精确搜索知识条目 -->
+    <select id="exactSearchArticles" resultMap="KbArticleVOMap">
+        SELECT
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        WHERE a.del_flag = 0 AND a.status = 'published'
+        <if test="keyword != null and keyword != ''">
+            AND (
+                a.title = #{keyword}
+                OR a.summary = #{keyword}
+                OR a.keywords = #{keyword}
+            )
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND a.category_id = #{categoryId}
+        </if>
+        ORDER BY a.quality_score DESC, a.view_count DESC
+    </select>
+
+    <!-- 根据标签搜索知识条目 -->
+    <select id="searchArticlesByTags" resultMap="KbArticleVOMap">
+        SELECT DISTINCT
+            a.id,
+            a.title,
+            a.summary,
+            a.content,
+            a.content_type,
+            a.category_id,
+            c.category_name,
+            a.keywords,
+            a.source_type,
+            a.source_url,
+            a.attachment_ids,
+            a.view_count,
+            a.like_count,
+            a.collect_count,
+            a.comment_count,
+            a.share_count,
+            a.quality_score,
+            a.status,
+            a.publish_time,
+            a.is_top,
+            a.is_recommend,
+            a.is_public,
+            a.version,
+            a.create_by,
+            u1.realname as create_by_name,
+            a.create_time,
+            a.update_by,
+            u2.realname as update_by_name,
+            a.update_time
+        FROM kb_article a
+        LEFT JOIN kb_category c ON a.category_id = c.id
+        LEFT JOIN sys_user u1 ON a.create_by = u1.username
+        LEFT JOIN sys_user u2 ON a.update_by = u2.username
+        INNER JOIN kb_article_tag at ON a.id = at.article_id
+        INNER JOIN kb_tag t ON at.tag_id = t.id
+        WHERE a.del_flag = 0 AND a.status = 'published'
+        <if test="tagNames != null and tagNames.size() > 0">
+            AND t.tag_name IN
+            <foreach collection="tagNames" item="tagName" open="(" separator="," close=")">
+                #{tagName}
+            </foreach>
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            AND a.category_id = #{categoryId}
+        </if>
+        ORDER BY a.quality_score DESC, a.view_count DESC
+    </select>
+
+</mapper>

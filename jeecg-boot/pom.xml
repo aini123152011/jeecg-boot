@@ -30,7 +30,7 @@
 	<properties>
 		<jeecgboot.version>3.8.1</jeecgboot.version>
 		<!-- JDK版本支持17和1.8 -->
-		<java.version>17</java.version>
+		<java.version>1.8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- 微服务 -->
@@ -81,6 +81,12 @@
 		<!-- Log4j2爆雷漏洞 -->
 		<log4j2.version>2.17.0</log4j2.version>
 		<logback.version>1.2.13</logback.version>
+
+		<!-- 知识库模块相关依赖版本 -->
+		<flexmark.version>0.64.8</flexmark.version>
+		<jsoup.version>1.17.2</jsoup.version>
+		<poi.version>5.2.4</poi.version>
+		<pdfbox.version>2.0.29</pdfbox.version>
 	</properties>
 
 	<modules>
@@ -461,6 +467,35 @@
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-core</artifactId>
 				<version>7.15.0</version>
+			</dependency>
+
+			<!-- 知识库模块相关依赖 -->
+			<!-- Markdown解析支持 -->
+			<dependency>
+				<groupId>com.vladsch.flexmark</groupId>
+				<artifactId>flexmark-all</artifactId>
+				<version>${flexmark.version}</version>
+			</dependency>
+
+			<!-- HTML解析支持 -->
+			<dependency>
+				<groupId>org.jsoup</groupId>
+				<artifactId>jsoup</artifactId>
+				<version>${jsoup.version}</version>
+			</dependency>
+
+			<!-- 文件处理支持 -->
+			<dependency>
+				<groupId>org.apache.poi</groupId>
+				<artifactId>poi-ooxml</artifactId>
+				<version>${poi.version}</version>
+			</dependency>
+
+			<!-- PDF处理支持 -->
+			<dependency>
+				<groupId>org.apache.pdfbox</groupId>
+				<artifactId>pdfbox</artifactId>
+				<version>${pdfbox.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

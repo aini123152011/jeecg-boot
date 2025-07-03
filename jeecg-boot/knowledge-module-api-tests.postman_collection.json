@@ -1,0 +1,726 @@
+{
+  "info": {
+    "name": "知识库模块API测试",
+    "description": "JeecgBoot知识库模块的完整API测试集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/jeecg-boot",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "articleId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "用户认证",
+      "item": [
+        {
+          "name": "用户登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"123456\",\n  \"captcha\": \"\",\n  \"checkKey\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sys/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["sys", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login should be successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.token).to.exist;",
+                  "    ",
+                  "    // 保存token用于后续请求",
+                  "    pm.collectionVariables.set(\"token\", jsonData.result.token);",
+                  "    console.log(\"Token saved: \" + jsonData.result.token);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取用户信息",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/sys/user/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["sys", "user", "info"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Should get user info\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.userInfo).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "知识分类管理",
+      "item": [
+        {
+          "name": "创建知识分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryName\": \"测试分类\",\n  \"categoryCode\": \"TEST_CATEGORY\",\n  \"description\": \"这是一个测试分类\",\n  \"icon\": \"folder\",\n  \"sortNo\": 1,\n  \"isLeaf\": 1,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbCategory/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbCategory", "add"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should be successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.message).to.eql(\"添加成功！\");",
+                  "    ",
+                  "    // 保存分类ID用于后续测试",
+                  "    if (jsonData.result) {",
+                  "        pm.collectionVariables.set(\"categoryId\", jsonData.result);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取分类列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbCategory/list?pageNo=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbCategory", "list"],
+              "query": [
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain records\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.records).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取分类树形结构",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbCategory/tree",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbCategory", "tree"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain tree structure\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "根据ID查询分类",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbCategory/queryById?id={{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbCategory", "queryById"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain category data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.categoryName).to.eql(\"测试分类\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "检查分类编码是否存在",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbCategory/checkCode?categoryCode=TEST_CATEGORY",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbCategory", "checkCode"],
+              "query": [
+                {
+                  "key": "categoryCode",
+                  "value": "TEST_CATEGORY"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should indicate code exists\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "知识条目管理",
+      "item": [
+        {
+          "name": "创建知识条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"测试知识条目\",\n  \"summary\": \"这是一个测试知识条目的摘要\",\n  \"content\": \"# 测试知识条目\\n\\n这是测试内容，包含**粗体**和*斜体*文本。\",\n  \"contentType\": \"markdown\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"keywords\": \"测试,知识库,API\",\n  \"sourceType\": \"manual\",\n  \"viewCount\": 0,\n  \"likeCount\": 0,\n  \"collectCount\": 0,\n  \"commentCount\": 0,\n  \"shareCount\": 0,\n  \"status\": \"published\",\n  \"isTop\": 0,\n  \"isRecommend\": 1,\n  \"isPublic\": 1,\n  \"version\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbArticle/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbArticle", "add"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should be successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.message).to.eql(\"添加成功！\");",
+                  "    ",
+                  "    // 保存文章ID用于后续测试",
+                  "    if (jsonData.result) {",
+                  "        pm.collectionVariables.set(\"articleId\", jsonData.result);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取知识条目列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbArticle/list?pageNo=1&pageSize=10&categoryId={{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbArticle", "list"],
+              "query": [
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain records\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.records).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取推荐知识条目",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbArticle/recommend?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbArticle", "recommend"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain recommended articles\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "获取知识条目详情",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbArticle/detail?id={{articleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbArticle", "detail"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{articleId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain article detail\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.title).to.eql(\"测试知识条目\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "增加浏览次数",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/kbArticle/view?id={{articleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "kbArticle", "view"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{articleId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should be successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "知识搜索",
+      "item": [
+        {
+          "name": "全文搜索",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/search/fulltext?keyword=测试&pageNo=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "search", "fulltext"],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "测试"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain search results\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.records).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "标签搜索",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/search/tags?tags=测试,知识库&pageNo=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "search", "tags"],
+              "query": [
+                {
+                  "key": "tags",
+                  "value": "测试,知识库"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain search results\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.records).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "高级搜索",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Access-Token",
+                "value": "{{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/knowledge/search/advanced?title=测试&content=知识&categoryId={{categoryId}}&status=published&pageNo=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["knowledge", "search", "advanced"],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "测试"
+                },
+                {
+                  "key": "content",
+                  "value": "知识"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}"
+                },
+                {
+                  "key": "status",
+                  "value": "published"
+                },
+                {
+                  "key": "pageNo",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response should contain search results\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "    pm.expect(jsonData.result.records).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

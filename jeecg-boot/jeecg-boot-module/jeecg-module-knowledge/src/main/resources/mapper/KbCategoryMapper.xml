@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.jeecg.modules.knowledge.mapper.KbCategoryMapper">
+
+    <!-- 递归查询所有子分类ID -->
+    <select id="selectChildrenIds" parameterType="string" resultType="string">
+        WITH RECURSIVE category_tree AS (
+            -- 查询直接子分类
+            SELECT id FROM kb_category
+            WHERE parent_id = #{parentId} AND del_flag = 0
+
+            UNION ALL
+
+            -- 递归查询子分类的子分类
+            SELECT c.id FROM kb_category c
+            INNER JOIN category_tree ct ON c.parent_id = ct.id
+            WHERE c.del_flag = 0
+        )
+        SELECT id FROM category_tree
+    </select>
+
+</mapper>
